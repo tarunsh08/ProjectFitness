@@ -15,8 +15,8 @@ export default function BeginnerPlan() {
         if (res.ok) {
           setIsAuthenticated(true);
         }
-      } catch (err) {
-        console.error('Auth check failed');
+      } catch (error) {
+        console.error('Auth check failed:', error instanceof Error ? error.message : 'Unknown error');
       } finally {
         setIsLoading(false);
       }

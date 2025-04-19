@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Plan {
   title: string;
@@ -11,7 +12,6 @@ interface Plan {
   border: string;
   badge?: string;
 }
-
 
 export default function Hero() {
   const plans: Plan[] = [
@@ -50,7 +50,7 @@ export default function Hero() {
             Train Smarter <br className="sm:hidden" /><span className="text-green-700">Grow Stronger</span>
           </h1>
           <p className="text-base sm:text-lg text-gray-400 mb-6 sm:mb-8 break-words">
-          "Transform your fitness journey with personalized plans, expert coaching, and unwavering support."
+            Transform your fitness journey with personalized plans, expert coaching, and unwavering support.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
             <button className="border border-green-600 text-green-600 hover:bg-blue-50 px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-base sm:text-lg transition duration-300 cursor-pointer">
@@ -59,12 +59,14 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className="order-1 lg:order-2 w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto lg:mx-0">
-          <img
+        <div className="order-1 lg:order-2 w-full max-w-xs sm:max-w-sm md:max-w-md mx-auto lg:mx-0 relative aspect-square">
+          <Image
             src="https://cdn.vectorstock.com/i/750p/58/88/weightlifter-lifting-barbell-retro-vector-2295888.avif"
             alt="Hero Illustration"
-            className="w-full rounded-lg shadow-xl"
-            loading="lazy"
+            fill
+            className="w-full rounded-lg shadow-xl object-cover"
+            priority
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         </div>
       </div>

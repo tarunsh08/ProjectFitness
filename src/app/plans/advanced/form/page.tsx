@@ -37,7 +37,7 @@ export default function AdvancedPaymentPage() {
         throw new Error('Invalid Razorpay order response');
       }
 
-      const options = {
+      const options: RazorpayOptions = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
         name: 'NattyGyatt',
         currency: data.currency,
@@ -57,7 +57,7 @@ export default function AdvancedPaymentPage() {
         },
       };
 
-      const rzp = new (window as any).Razorpay(options);
+      const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (err) {
       console.error(err);

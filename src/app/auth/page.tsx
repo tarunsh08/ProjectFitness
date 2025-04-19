@@ -173,7 +173,7 @@ export default function AuthPage() {
         <p className="text-center text-sm text-gray-400">
           {isLogin ? (
             <>
-              Don't have an account?{' '}
+              Dont have an account?{' '}
               <button
                 type="button"
                 onClick={() => {

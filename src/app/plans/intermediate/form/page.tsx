@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export default function IntermediatePaymentPage() {
   const [loading, setLoading] = useState(false);
@@ -33,8 +33,8 @@ export default function IntermediatePaymentPage() {
 
       const data = await response.json();
 
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      const options: RazorpayOptions = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
         name: 'NattyGyatt',
         currency: data.currency,
         amount: data.amount,
@@ -53,7 +53,7 @@ export default function IntermediatePaymentPage() {
         },
       };
 
-      const rzp = new (window as any).Razorpay(options);
+      const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (err) {
       console.error(err);

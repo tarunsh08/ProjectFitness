@@ -21,7 +21,7 @@ export default function ProfileDisplay({
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
         <div className="bg-gray-100 dark:bg-gray-700 px-4 py-5 sm:px-6 flex justify-between items-center">
           <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-            {name}'s Profile
+            {name}s Profile
           </h2>
           {isOwner && (
             <Link 

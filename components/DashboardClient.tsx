@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import Sidebar from './Sidebar';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,9 +14,30 @@ type Post = {
   likes: number;
 };
 
+interface RazorpayOptions {
+  key: string | undefined;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  handler: () => Promise<void>;
+  prefill: {
+    name: string;
+    email: string;
+  };
+  theme: {
+    color: string;
+  };
+}
+
 declare global {
   interface Window {
-    Razorpay: any;
+    Razorpay: {
+      new(options: RazorpayOptions): {
+        open: () => void;
+      };
+    };
   }
 }
 
@@ -29,19 +51,19 @@ export default function DashboardClient({ user }: { user: string }) {
   const supabase = createClientComponentClient();
   const selectedFile = useRef<File | null>(null);
 
-  const getStoredLikes = () => {
+  const getStoredLikes = useCallback(() => {
     if (typeof window !== 'undefined') {
       const storedLikes = localStorage.getItem('postLikes');
       return storedLikes ? JSON.parse(storedLikes) : {};
     }
     return {};
-  };
+  }, []);
 
-  const saveLikesToStorage = (likes: Record<string, number>) => {
+  const saveLikesToStorage = useCallback((likes: Record<string, number>) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('postLikes', JSON.stringify(likes));
     }
-  };
+  }, []);
 
   const toggleSidebar = () => setShowSidebar(prev => !prev);
   const closeSidebar = () => setShowSidebar(false);
@@ -62,7 +84,7 @@ export default function DashboardClient({ user }: { user: string }) {
     };
   }, [showSidebar]);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
@@ -86,11 +108,11 @@ export default function DashboardClient({ user }: { user: string }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supabase, getStoredLikes]);
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [fetchPosts]);
 
   const handleLike = (postId: string) => {
     setPosts(prevPosts => {
@@ -113,7 +135,7 @@ export default function DashboardClient({ user }: { user: string }) {
 
     const data = await res.json();
 
-    const options = {
+    const options: RazorpayOptions = {
       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
       amount: data.amount,
       currency: data.currency,
@@ -193,8 +215,8 @@ export default function DashboardClient({ user }: { user: string }) {
     <div className="relative min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-emerald-900 text-gray-300">
       {/* Header */}
       <header className="bg-black/80 backdrop-blur-sm text-white px-6 py-4 flex justify-between items-center shadow-lg border-b border-gray-700">
-        <button 
-          onClick={toggleSidebar} 
+        <button
+          onClick={toggleSidebar}
           className="text-xl font-semibold cursor-pointer hover:text-green-500 transition-colors"
         >
           ☰
@@ -202,7 +224,7 @@ export default function DashboardClient({ user }: { user: string }) {
         <h1 className="text-xl font-bold bg-gradient-to-r from-green-500 to-emerald-400 bg-clip-text text-transparent">
           NattyGyatt Dashboard
         </h1>
-        <div className="w-6"></div> {/* Spacer for balance */}
+        <div className="w-6"></div>
       </header>
 
       {/* Sidebar */}
@@ -212,7 +234,7 @@ export default function DashboardClient({ user }: { user: string }) {
 
       {/* Main Content */}
       <main className="px-4 sm:px-6 py-8 pb-24 max-w-6xl mx-auto">
-        {/* Upload Button - Fixed Position */}
+        {/* Upload Button */}
         <div className="fixed bottom-6 right-6 z-10">
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -270,8 +292,8 @@ export default function DashboardClient({ user }: { user: string }) {
             </div>
           ) : (
             posts.map((post) => (
-              <div 
-                key={post.id} 
+              <div
+                key={post.id}
                 className="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
               >
                 <div className="p-4">
@@ -294,19 +316,22 @@ export default function DashboardClient({ user }: { user: string }) {
                   </div>
                 </div>
                 <div className="relative aspect-square bg-gray-900">
-                  <img 
+                  <Image
                     src={post.image_url}
                     alt={`Post by ${post.user}`}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    loading="lazy"
+                    fill
+                    className="object-cover"
+                    placeholder="blur"
+                    blurDataURL="/placeholder-image.jpg"
                     onError={(e) => {
                       console.error('Failed to load image:', post.image_url);
-                      e.currentTarget.src = '/placeholder-image.jpg';
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/placeholder-image.jpg';
                     }}
                   />
                 </div>
                 <div className="p-4">
-                  <button 
+                  <button
                     onClick={() => handleLike(post.id)}
                     className="flex items-center gap-1 text-gray-400 hover:text-emerald-400 transition-colors"
                   >

@@ -16,7 +16,8 @@ export default function IntermediatePlanPage() {
 
     try {
       jwt.verify(token, process.env.JWT_SECRET!);
-    } catch (err) {
+    } catch (error) {
+      console.error('Token verification failed:', error);
       router.push('/auth?redirect=/plans/intermediate');
     }
   }, [router]);

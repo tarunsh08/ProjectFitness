@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import userProfile from '@/models/UserProfile';
 import supabase from '@/lib/supabase';

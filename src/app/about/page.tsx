@@ -21,13 +21,12 @@ export default function About() {
           About us
         </h1>
         <p className="text-base sm:text-lg text-gray-400 mb-6 sm:mb-8 break-words">
-          At Future Project, we believe that fitness is more than just a goal—it's a journey. Our mission is to empower individuals to unlock their full potential by providing personalized fitness plans tailored to their unique needs. Whether you're a beginner just starting your fitness journey, an intermediate enthusiast looking to level up, or an advanced athlete pushing your limits, we’ve got you covered.
+          At Future Project, we believe that fitness is more than just a goal—its a journey. Our mission is to empower individuals to unlock their full potential by providing personalized fitness plans tailored to their unique needs. Whether you are a beginner just starting your fitness journey, an intermediate enthusiast looking to level up, or an advanced athlete pushing your limits, we’ve got you covered.
 
-          Our platform offers a seamless experience, starting with a personalized consultation to understand your goals, fitness level, and lifestyle. Based on your input, we craft customized workout routines and nutrition plans designed to help you achieve your desired transformation. But it doesn't stop there—our platform connects you with expert coaches who are there to guide, motivate, and support you every step of the way.
+          Our platform offers a seamless experience, starting with a personalized consultation to understand your goals, fitness level, and lifestyle. Based on your input, we craft customized workout routines and nutrition plans designed to help you achieve your desired transformation. But it doesnt stop there—our platform connects you with expert coaches who are there to guide, motivate, and support you every step of the way.
 
-          With an intuitive and engaging user interface, you’ll have access to daily motivational posts, client transformations, and a dashboard where you can track your progress. We also offer a free trial period so you can experience all the benefits before committing to a subscription.
-
-          Whether you're looking to gain muscle, lose weight, or simply improve your overall health, Future Project is here to help you become the best version of yourself. Join our community today and start your transformation journey!
+          With an intuitive and engaging user interface, you’ll have access to client transformations, and a dashboard where you can track your progress.
+          Whether you are looking to gain muscle, lose weight, or simply improve your overall health, Future Project is here to help you become the best version of yourself. Join our community today and start your transformation journey!
         </p>
 
         <button
