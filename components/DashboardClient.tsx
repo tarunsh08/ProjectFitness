@@ -13,6 +13,12 @@ type Post = {
   likes: number;
 };
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 export default function DashboardClient({ user }: { user: string }) {
   const [showSidebar, setShowSidebar] = useState(false);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -21,8 +27,8 @@ export default function DashboardClient({ user }: { user: string }) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
   const supabase = createClientComponentClient();
+  const selectedFile = useRef<File | null>(null);
 
-  // Load likes from localStorage
   const getStoredLikes = () => {
     if (typeof window !== 'undefined') {
       const storedLikes = localStorage.getItem('postLikes');
@@ -31,7 +37,6 @@ export default function DashboardClient({ user }: { user: string }) {
     return {};
   };
 
-  // Save likes to localStorage
   const saveLikesToStorage = (likes: Record<string, number>) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('postLikes', JSON.stringify(likes));
@@ -68,11 +73,10 @@ export default function DashboardClient({ user }: { user: string }) {
       if (error) throw error;
 
       const storedLikes = getStoredLikes();
-      
       const formattedPosts = data?.map(post => ({
         ...post,
         image_url: post.image_url.replace(/([^:]\/)\/+/g, '$1'),
-        likes: storedLikes[post.id] || 0 // Initialize likes from storage or 0
+        likes: storedLikes[post.id] || 0
       })) || [];
 
       setPosts(formattedPosts);
@@ -90,22 +94,46 @@ export default function DashboardClient({ user }: { user: string }) {
 
   const handleLike = (postId: string) => {
     setPosts(prevPosts => {
-      const updatedPosts = prevPosts.map(post => 
-        post.id === postId 
-          ? { ...post, likes: post.likes + 1 } 
-          : post
+      const updatedPosts = prevPosts.map(post =>
+        post.id === postId ? { ...post, likes: post.likes + 1 } : post
       );
-      
-      // Update localStorage with new likes
       const likesMap = updatedPosts.reduce((acc, post) => {
         acc[post.id] = post.likes;
         return acc;
       }, {} as Record<string, number>);
-      
       saveLikesToStorage(likesMap);
-      
       return updatedPosts;
     });
+  };
+
+  const initiateRazorpayPayment = async () => {
+    const res = await fetch('/api/payment', {
+      method: 'POST',
+    });
+
+    const data = await res.json();
+
+    const options = {
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      amount: data.amount,
+      currency: data.currency,
+      name: 'NattyGyatt Upload',
+      description: 'Image upload fee',
+      order_id: data.id,
+      handler: async () => {
+        await uploadFileToSupabase();
+      },
+      prefill: {
+        name: user,
+        email: 'test@example.com',
+      },
+      theme: {
+        color: '#10B981',
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,15 +145,22 @@ export default function DashboardClient({ user }: { user: string }) {
       return;
     }
 
+    selectedFile.current = file;
+    await initiateRazorpayPayment();
+  };
+
+  const uploadFileToSupabase = async () => {
+    const file = selectedFile.current;
+    if (!file) return;
+
     try {
       setUploading(true);
       const fileName = `${uuidv4()}-${file.name.replace(/\s+/g, '-')}`;
-
       const { error: uploadError } = await supabase.storage
         .from('nattypost')
         .upload(fileName, file, {
-          cacheControl: '3600', 
-          upsert: false
+          cacheControl: '3600',
+          upsert: false,
         });
 
       if (uploadError) throw uploadError;
@@ -136,15 +171,15 @@ export default function DashboardClient({ user }: { user: string }) {
 
       const { error: dbError } = await supabase
         .from('nattypost')
-        .insert([{ 
-          user, 
+        .insert([{
+          user,
           image_url: publicUrl,
-          created_at: new Date().toISOString() 
+          created_at: new Date().toISOString(),
         }]);
 
       if (dbError) throw dbError;
 
-      await fetchPosts(); 
+      await fetchPosts();
     } catch (error) {
       console.error("Upload failed:", error);
       alert("Upload failed. Please try again.");

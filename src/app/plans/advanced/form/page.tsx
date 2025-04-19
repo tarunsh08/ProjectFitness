@@ -33,8 +33,12 @@ export default function AdvancedPaymentPage() {
 
       const data = await response.json();
 
+      if (!data.id || !data.amount || !data.currency) {
+        throw new Error('Invalid Razorpay order response');
+      }
+
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
         name: 'NattyGyatt',
         currency: data.currency,
         amount: data.amount,
@@ -57,7 +61,7 @@ export default function AdvancedPaymentPage() {
       rzp.open();
     } catch (err) {
       console.error(err);
-      alert('Something went wrong');
+      alert('Something went wrong during payment.');
     } finally {
       setLoading(false);
     }

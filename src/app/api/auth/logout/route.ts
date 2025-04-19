@@ -10,6 +10,8 @@ export async function POST() {
     // Clear the token cookie
     response.cookies.set('token', '', {
       httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
       expires: new Date(0),
       path: '/',
     });

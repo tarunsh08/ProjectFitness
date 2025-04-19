@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import jwt from 'jsonwebtoken';
 
 export default function AdvancedPlanPage() {
   const router = useRouter();
@@ -14,13 +13,6 @@ export default function AdvancedPlanPage() {
         .find((row) => row.startsWith('token='))?.split('=')[1];
 
       if (!token) {
-        router.push('/plans/advanced');
-        return;
-      }
-
-      try {
-        jwt.verify(token, process.env.JWT_SECRET!);
-      } catch (err) {
         router.push('/auth?redirect=/plans/advanced');
       }
     };
