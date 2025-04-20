@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   await dbConnect();
 
   try {
-    const { email, password, redirectTo = "/dashboard" } = await req.json();
+    const { email, password } = await req.json();
 
     // Validate input
     if (!email || !password) {
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     const user = await User.findOne({ email });
     if (!user) {
       return NextResponse.json(
-        { error: "Invalid email or password" }, // Generic message for security
+        { error: "Invalid email or password" },
         { status: 401 }
       );
     }
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return NextResponse.json(
-        { error: "Invalid email or password" }, // Generic message for security
+        { error: "Invalid email or password" },
         { status: 401 }
       );
     }
@@ -40,12 +40,8 @@ export async function POST(req: Request) {
       { expiresIn: "7d" }
     );
 
-    // Create response with redirect
-    const response = NextResponse.redirect(
-      new URL(redirectTo, process.env.NEXT_PUBLIC_BASE_URL)
-    );
-
-    // Set cookie
+    // Set cookie using NextResponse
+    const response = NextResponse.json({ success: true });
     response.cookies.set({
       name: "token",
       value: token,
