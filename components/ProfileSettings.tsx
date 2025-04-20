@@ -23,20 +23,21 @@ export default function ProfileSettings({ userId }: { userId: string }) {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) throw new Error('Session expired');
-
         const res = await fetch(`/api/auth/profile?userId=${userId}`, {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`
-          }
+          credentials: 'include',
         });
-
+  
         if (!res.ok) {
           const error = await res.json();
+          if (error.error && error.error === 'Unauthorized') {
+            // Handle Unauthorized error gracefully
+            toast.error('You need to be logged in to access this profile.');
+            router.push('/userprofile'); // Redirect user to login page or dashboard
+            return;
+          }
           throw new Error(error.error || 'Failed to fetch profile');
         }
-
+  
         const data = await res.json();
         setProfile({
           name: data.name || '',
@@ -46,117 +47,104 @@ export default function ProfileSettings({ userId }: { userId: string }) {
       } catch (error) {
         console.error('Fetch error:', error);
         toast.error(error instanceof Error ? error.message : 'Failed to load profile');
-        if (error instanceof Error && error.message.includes('Session')) {
-          router.push('/dashboard');
-        }
       } finally {
         setLoading(prev => ({ ...prev, fetch: false }));
       }
     };
-
+  
     if (userId) fetchProfile();
   }, [userId, router]);
+  
 
   const handleAvatarUpload = async (file: File): Promise<string> => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error('Authentication required');
-    if (session.user.id !== userId) throw new Error('Unauthorized access');
-
+    if (!userId) throw new Error('User ID missing');
+  
     const fileName = `avatars/${userId}-${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
-    
+  
     const { error: uploadError } = await supabase.storage
       .from('nattypost')
       .upload(fileName, file, {
         cacheControl: '3600',
         contentType: file.type,
-        upsert: true
+        upsert: true,
       });
-
+  
     if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('nattypost')
-      .getPublicUrl(fileName);
-
-    return publicUrl;
+  
+    const { data } = supabase.storage.from('nattypost').getPublicUrl(fileName);
+    return data.publicUrl;
   };
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+  
     if (!profile.name.trim()) {
       toast.error('Name is required');
       return;
     }
-
+  
     setLoading(prev => ({ ...prev, submit: true }));
-
+  
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Session expired. Please sign in again');
-      if (session.user.id !== userId) throw new Error('Unauthorized access');
-
       let avatarUrl = profile.avatarUrl;
+  
       if (avatarFile) {
         setLoading(prev => ({ ...prev, upload: true }));
         avatarUrl = await handleAvatarUpload(avatarFile);
         setProfile(prev => ({ ...prev, avatarUrl }));
       }
-
+  
       const res = await fetch('/api/auth/profile', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ 
-          userId, 
-          name: profile.name.trim(), 
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          userId,
+          name: profile.name.trim(),
           bio: profile.bio.trim(),
           avatarUrl
         }),
       });
-
+  
       if (!res.ok) {
         const error = await res.json();
+        if (error.error === 'Unauthorized') {
+          toast.error('You are not authorized to perform this action.');
+          router.push('/userprofile'); // or /dashboard, based on your flow
+          return;
+        }
         throw new Error(error.error || 'Failed to save profile');
       }
-
+  
       toast.success('Profile updated successfully! Redirecting...');
       setAvatarFile(null);
-      
-      // Redirect to profile page after successful update
+  
       setTimeout(() => {
         router.push(`/profile/${userId}`);
-        router.refresh(); // Ensure fresh data is loaded
+        router.refresh();
       }, 1500);
-
+  
     } catch (error) {
       console.error('Update error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update profile';
       toast.error(errorMessage);
-      
-      if (errorMessage.includes('Session') || errorMessage.includes('Unauthorized')) {
-        await supabase.auth.signOut();
-        router.push('/dashboard');
-      }
     } finally {
       setLoading(prev => ({ ...prev, submit: false, upload: false }));
     }
   };
+  
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     if (!file) return;
 
-    // Validate file type
     const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       toast.error('Please select a valid image (JPEG, PNG, GIF, or WEBP)');
       return;
     }
 
-    // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
       toast.error('File size must be less than 2MB');
       return;
@@ -184,7 +172,6 @@ export default function ProfileSettings({ userId }: { userId: string }) {
       <form onSubmit={handleSubmit} className="bg-gray-900 rounded-xl shadow-lg p-6 space-y-6">
         <h2 className="text-2xl font-bold text-center text-white">Profile Settings</h2>
         
-        {/* Avatar Upload Section */}
         <div className="flex flex-col items-center space-y-4">
           <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-green-500">
             {profile.avatarUrl ? (
@@ -226,7 +213,6 @@ export default function ProfileSettings({ userId }: { userId: string }) {
           </label>
         </div>
 
-        {/* Profile Form Fields */}
         <div className="space-y-4">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
@@ -234,9 +220,7 @@ export default function ProfileSettings({ userId }: { userId: string }) {
             </label>
             <input
               id="name"
-              name="name"
               type="text"
-              placeholder="Your name"
               value={profile.name}
               onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
               className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -251,8 +235,6 @@ export default function ProfileSettings({ userId }: { userId: string }) {
             </label>
             <textarea
               id="bio"
-              name="bio"
-              placeholder="Tell others about yourself..."
               value={profile.bio}
               onChange={(e) => setProfile(prev => ({ ...prev, bio: e.target.value }))}
               rows={5}
@@ -262,7 +244,6 @@ export default function ProfileSettings({ userId }: { userId: string }) {
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex flex-col space-y-3">
           <button
             type="submit"
@@ -273,17 +254,7 @@ export default function ProfileSettings({ userId }: { userId: string }) {
                 : 'bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg'
             }`}
           >
-            {loading.submit ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Saving Changes...
-              </span>
-            ) : (
-              'Save Profile'
-            )}
+            {loading.submit ? 'Saving Changes...' : 'Save Profile'}
           </button>
 
           <button
