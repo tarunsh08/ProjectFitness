@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import Sidebar from './Sidebar';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { v4 as uuidv4 } from 'uuid';
@@ -33,7 +34,7 @@ export default function DashboardClient({ user }: { user: string }) {
     };
   }, [showSidebar]);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
@@ -62,7 +63,7 @@ export default function DashboardClient({ user }: { user: string }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [supabase]);
 
   useEffect(() => {
     const cleanupPostsData = async () => {
@@ -96,7 +97,7 @@ export default function DashboardClient({ user }: { user: string }) {
     };
     
     cleanupPostsData();
-  }, []);
+  }, [supabase, fetchPosts]);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -112,7 +113,7 @@ export default function DashboardClient({ user }: { user: string }) {
       const fileName = `${uuidv4()}-${file.name.replace(/\s+/g, '-')}`;
 
       // Upload file to storage
-      const { error: uploadError, data: uploadData } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('nattypost')
         .upload(fileName, file, {
           cacheControl: '3600',
@@ -241,14 +242,15 @@ export default function DashboardClient({ user }: { user: string }) {
                 </div>
                 <div className="relative aspect-square bg-gray-900">
                   {post.image_url ? (
-                    <img 
+                    <Image 
                       src={post.image_url}
                       alt={`Post by ${post.user}`}
-                      className="absolute inset-0 w-full h-full object-cover"
+                      fill
+                      className="object-cover"
                       loading="lazy"
-                      onError={(e) => {
+                      onError={() => {
                         console.error('Failed to load image:', post.image_url);
-                        // e.currentTarget.src = '/placeholder-image.jpg'; // Fallback image
+                        // Could add fallback image logic here
                       }}
                     />
                   ) : (
