@@ -1,23 +1,25 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import jwt from 'jsonwebtoken';
 
 export default function AdvancedPlanPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const checkAuth = () => {
-      const token = document.cookie
-        .split('; ')
-        .find((row) => row.startsWith('token='))?.split('=')[1];
+    const token = document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
+    if (!token) {
+      router.push('/plans/advanced');
+      return;
+    }
 
-      if (!token) {
-        router.push('/auth?redirect=/plans/advanced');
-      }
-    };
-
-    checkAuth();
+    try {
+      jwt.verify(token, process.env.JWT_SECRET!);
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      router.push('/auth?redirect=/plans/advanced');
+    }
   }, [router]);
 
   const handleBuyNow = () => {
@@ -25,16 +27,11 @@ export default function AdvancedPlanPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-emerald-900 py-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto bg-gradient-to-r from-green-500 via-emerald-800 to-black rounded-xl shadow-md p-8">
-        <h1 className="text-3xl font-bold text-black mb-4">Advanced Plan</h1>
-        <p className="text-white mb-6">
-          The Advanced Plan is tailored for serious athletes who want elite-level performance.
-          You’ll receive one-on-one coaching, precise analytics, and a plan crafted around your individual strengths and goals.
-        </p>
-
-        <h2 className="text-xl font-semibold text-gray-300 mb-2">What’s Included:</h2>
-        <ul className="list-disc list-inside text-white mb-6 space-y-1">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-emerald-900 px-4">
+      <div className="bg-gradient-to-r from-green-500 via-emerald-800 to-black p-6 rounded-xl shadow-md max-w-2xl w-full space-y-4">
+        <h1 className="text-2xl font-bold text-black">Advanced Plan</h1>
+        <p className="text-white">This plan includes:</p>
+        <ul className="list-disc list-inside space-y-2 text-white">
           <li>1-on-1 personal coaching with weekly calls</li>
           <li>Advanced performance tracking & analytics</li>
           <li>Tailored nutrition & supplement guidance</li>
@@ -43,7 +40,7 @@ export default function AdvancedPlanPage() {
         </ul>
 
         <p className="text-xl font-semibold text-gray-800 mb-4">
-          💲 Price: <span className="text-black">$30/month</span>
+          💲 Price: <span className="text-black">$12/month</span>
         </p>
 
         <button

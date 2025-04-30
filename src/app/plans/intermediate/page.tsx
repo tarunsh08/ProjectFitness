@@ -39,7 +39,7 @@ export default function IntermediatePlanPage() {
         </ul>
 
         <p className="text-xl font-semibold text-gray-800 mb-4">
-          💲 Price: <span className="text-black">$15/month</span>
+          💲 Price: <span className="text-black">$7/month</span>
         </p>
 
         <button
